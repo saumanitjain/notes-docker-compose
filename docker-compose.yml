@@ -1,0 +1,46 @@
+version: '2'
+
+services:
+
+  bizops-scheduler:
+    image: cgbudockerdev1.us.oracle.com:7897/amplify/bizops-scheduler
+    mem_limit: ${AMP_NORMAL_MEM_LIMIT}
+    memswap_limit: ${AMP_NORMAL_MEM_SWAP_LIMIT}
+    mem_reservation: ${AMP_NORMAL_MEM_RESERVATION}
+    cpu_shares: 512
+    command: ["java", "-jar", "WaitForDb-1.0.0.jar", "${AMP_BUSINESS_OPS_DATABASE}", "-1", "10000", "java", "${JAVA_MS_MEM_OPTS}", "${JAVA_MX_MEM_OPTS}", "-jar", "bizops-scheduler.jar"]
+    environment: 
+      VIRTUALTIME_ENABLED: "false"      
+      VIRTUALTIME_URL: "http://virtualtime:8182/virtualtime/1.0/get"
+    ports:
+      - "8322"
+    depends_on:
+      - amplifydb
+    restart: on-failure:10
+
+  amplifydb:
+    image: cgbudockerdev1.us.oracle.com:7755/amplify/oracledb/db:12c
+    mem_limit: ${AMP_DB_MEM_LIMIT}
+    memswap_limit: ${AMP_DB_MEM_SWAP_LIMIT}
+    mem_reservation: ${AMP_DB_MEM_RESERVATION}   
+    ports:
+      - 1521
+      - 5500
+    environment:
+      - ORACLE_BASE=${AMP_DB_ORACLE_BASE}
+      - ORACLE_HOME=${AMP_DB_ORACLE_HOME}
+      - ORACLE_SID=${AMP_DB_ORACLE_SID}
+      - ORACLE_PDB=${AMP_DB_ORACLE_PDB}
+    command: [sh, /opt/oracle/runOracle.sh]
+    
+  virtualtime:
+    image: cgbudockerdev1.us.oracle.com:7755/amplify/virtualtime    
+    mem_limit: ${AMP_NORMAL_MEM_LIMIT}
+    memswap_limit: ${AMP_NORMAL_MEM_SWAP_LIMIT}
+    mem_reservation: ${AMP_NORMAL_MEM_RESERVATION}
+    cpu_shares: 512
+    ports: 
+      - 8182
+        
+  loopback:
+    image: cgbudockerdev1.us.oracle.com:7755/amplify/loopback
